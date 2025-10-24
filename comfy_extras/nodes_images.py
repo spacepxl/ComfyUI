@@ -657,6 +657,38 @@ class ImageScaleToMaxDimension:
         s = s.movedim(1, -1)
         return (s,)
 
+class PixelShuffle:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": { "image": (IO.IMAGE,),
+                              "upscale_factor": ("INT", {"default": 2, "min": 1, "step": 1}),
+                              }}
+    RETURN_TYPES = (IO.IMAGE,)
+    FUNCTION = "shuffle"
+
+    CATEGORY = "image/transform"
+    DESCRIPTION = """Converts channels to spatial resolution by an upscale factor."""
+
+    def shuffle(self, image, upscale_factor):
+        image = torch.nn.functional.pixel_shuffle(image.movedim(-1, 1), upscale_factor=upscale_factor).movedim(1, -1)
+        return (image,)
+
+class PixelUnShuffle:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": { "image": (IO.IMAGE,),
+                              "downscale_factor": ("INT", {"default": 2, "min": 1, "step": 1}),
+                              }}
+    RETURN_TYPES = (IO.IMAGE,)
+    FUNCTION = "shuffle"
+
+    CATEGORY = "image/transform"
+    DESCRIPTION = """Converts spatial resolution to channels by a downscale factor."""
+
+    def shuffle(self, image, downscale_factor):
+        image = torch.nn.functional.pixel_shuffle(image.movedim(-1, 1), downscale_factor=downscale_factor).movedim(1, -1)
+        return (image,)
+
 NODE_CLASS_MAPPINGS = {
     "ImageCrop": ImageCrop,
     "RepeatImageBatch": RepeatImageBatch,
@@ -671,4 +703,6 @@ NODE_CLASS_MAPPINGS = {
     "ImageRotate": ImageRotate,
     "ImageFlip": ImageFlip,
     "ImageScaleToMaxDimension": ImageScaleToMaxDimension,
+    "PixelShuffle": PixelShuffle,
+    "PixelUnShuffle": PixelUnShuffle,
 }
