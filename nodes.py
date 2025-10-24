@@ -340,7 +340,8 @@ class VAEEncode:
     CATEGORY = "latent"
 
     def encode(self, vae, pixels):
-        t = vae.encode(pixels[:,:,:,:3])
+        in_ch = vae.input_channels
+        t = vae.encode(pixels[:,:,:,:in_ch])
         return ({"samples":t}, )
 
 class VAEEncodeTiled:
@@ -358,7 +359,8 @@ class VAEEncodeTiled:
     CATEGORY = "_for_testing"
 
     def encode(self, vae, pixels, tile_size, overlap, temporal_size=64, temporal_overlap=8):
-        t = vae.encode_tiled(pixels[:,:,:,:3], tile_x=tile_size, tile_y=tile_size, overlap=overlap, tile_t=temporal_size, overlap_t=temporal_overlap)
+        in_ch = vae.input_channels
+        t = vae.encode_tiled(pixels[:,:,:,:in_ch], tile_x=tile_size, tile_y=tile_size, overlap=overlap, tile_t=temporal_size, overlap_t=temporal_overlap)
         return ({"samples": t}, )
 
 class VAEEncodeForInpaint:
