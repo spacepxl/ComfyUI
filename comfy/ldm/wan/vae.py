@@ -225,6 +225,7 @@ class AttentionBlock(nn.Module):
 class Encoder3d(nn.Module):
 
     def __init__(self,
+                 in_channels=3,
                  dim=128,
                  z_dim=4,
                  dim_mult=[1, 2, 4, 4],
@@ -233,6 +234,7 @@ class Encoder3d(nn.Module):
                  temperal_downsample=[True, True, False],
                  dropout=0.0):
         super().__init__()
+        self.in_channels = in_channels
         self.dim = dim
         self.z_dim = z_dim
         self.dim_mult = dim_mult
@@ -245,7 +247,7 @@ class Encoder3d(nn.Module):
         scale = 1.0
 
         # init block
-        self.conv1 = CausalConv3d(3, dims[0], 3, padding=1)
+        self.conv1 = CausalConv3d(in_channels, dims[0], 3, padding=1)
 
         # downsample blocks
         downsamples = []
@@ -329,6 +331,7 @@ class Encoder3d(nn.Module):
 class Decoder3d(nn.Module):
 
     def __init__(self,
+                 out_channels=3,
                  dim=128,
                  z_dim=4,
                  dim_mult=[1, 2, 4, 4],
@@ -337,6 +340,7 @@ class Decoder3d(nn.Module):
                  temperal_upsample=[False, True, True],
                  dropout=0.0):
         super().__init__()
+        self.out_channels = out_channels
         self.dim = dim
         self.z_dim = z_dim
         self.dim_mult = dim_mult
@@ -378,7 +382,7 @@ class Decoder3d(nn.Module):
         # output blocks
         self.head = nn.Sequential(
             RMS_norm(out_dim, images=False), nn.SiLU(),
-            CausalConv3d(out_dim, 3, 3, padding=1))
+            CausalConv3d(out_dim, out_channels, 3, padding=1))
 
     def forward(self, x, feat_cache=None, feat_idx=[0]):
         ## conv1
@@ -443,6 +447,8 @@ def count_conv3d(model):
 class WanVAE(nn.Module):
 
     def __init__(self,
+                 in_channels=3,
+                 out_channels=3,
                  dim=128,
                  z_dim=4,
                  dim_mult=[1, 2, 4, 4],
@@ -451,6 +457,8 @@ class WanVAE(nn.Module):
                  temperal_downsample=[True, True, False],
                  dropout=0.0):
         super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
         self.dim = dim
         self.z_dim = z_dim
         self.dim_mult = dim_mult
@@ -460,11 +468,11 @@ class WanVAE(nn.Module):
         self.temperal_upsample = temperal_downsample[::-1]
 
         # modules
-        self.encoder = Encoder3d(dim, z_dim * 2, dim_mult, num_res_blocks,
+        self.encoder = Encoder3d(in_channels, dim, z_dim * 2, dim_mult, num_res_blocks,
                                  attn_scales, self.temperal_downsample, dropout)
         self.conv1 = CausalConv3d(z_dim * 2, z_dim * 2, 1)
         self.conv2 = CausalConv3d(z_dim, z_dim, 1)
-        self.decoder = Decoder3d(dim, z_dim, dim_mult, num_res_blocks,
+        self.decoder = Decoder3d(out_channels, dim, z_dim, dim_mult, num_res_blocks,
                                  attn_scales, self.temperal_upsample, dropout)
 
     def encode(self, x):
